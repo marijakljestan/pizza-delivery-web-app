@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/marijakljestan/golang-web-app/src/api/dto"
 	"github.com/marijakljestan/golang-web-app/src/domain/service"
@@ -18,6 +19,10 @@ func NewUserController(userService *service.UserService) *UserController {
 	}
 }
 
+func (handler *UserController) GetAllUsers(ctx *gin.Context) {
+
+}
+
 func (handler *UserController) RegisterUser(ctx *gin.Context) {
 	var userDto dto.UserDto
 	if err := ctx.BindJSON(&userDto); err != nil {
@@ -26,7 +31,7 @@ func (handler *UserController) RegisterUser(ctx *gin.Context) {
 	}
 	username, err := handler.userService.RegisterCustomer(userDto)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Error while saving customer!"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"user": username})
@@ -50,4 +55,14 @@ func (handler *UserController) Login(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusBadRequest, gin.H{"msg": "Invalid credentials"})
+}
+
+func (handler *UserController) GetAll(ctx *gin.Context) {
+	users, err := handler.userService.GetAll()
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error getting users!"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"data": users})
 }
