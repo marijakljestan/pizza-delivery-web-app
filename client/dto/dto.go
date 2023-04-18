@@ -21,3 +21,16 @@ type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+type LoginResponse struct {
+	Message string `json:"message"`
+	Token   string `json:"token"`
+}
+
+type GetMenuResponse struct {
+	Menu []Pizza `json:"menu"`
+}
+
+type GetOrderStatusResponse struct {
+	OrderStatus string `json:"status"`
+}

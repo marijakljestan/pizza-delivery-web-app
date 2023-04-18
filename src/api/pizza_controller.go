@@ -25,7 +25,7 @@ func (handler *PizzaController) GetMenu(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error getting menu!"})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": menu})
+	ctx.JSON(http.StatusOK, gin.H{"menu": menu})
 }
 
 func (handler *PizzaController) AddPizzaToMenu(ctx *gin.Context) {

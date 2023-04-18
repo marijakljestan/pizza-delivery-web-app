@@ -19,10 +19,6 @@ func NewUserController(userService *service.UserService) *UserController {
 	}
 }
 
-func (handler *UserController) GetAllUsers(ctx *gin.Context) {
-
-}
-
 func (handler *UserController) RegisterUser(ctx *gin.Context) {
 	var userDto dto.UserDto
 	if err := ctx.BindJSON(&userDto); err != nil {
@@ -34,7 +30,7 @@ func (handler *UserController) RegisterUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{"user": username})
+	ctx.JSON(http.StatusCreated, gin.H{"username": username})
 }
 
 func (handler *UserController) Login(ctx *gin.Context) {
@@ -45,16 +41,16 @@ func (handler *UserController) Login(ctx *gin.Context) {
 
 	user, err := handler.userService.GetByUsername(credentials.Username)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"msg": "User not found"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "User not found"})
 		return
 	}
 
 	if passwordMatches := utils.ComparePassword(user.Password, credentials.Password); passwordMatches {
 		token := utils.GenerateToken(user.Username, user.Role.String())
-		ctx.JSON(http.StatusOK, gin.H{"msg": "Successfully logged in", "token": token})
+		ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged in", "token": token})
 		return
 	}
-	ctx.JSON(http.StatusBadRequest, gin.H{"msg": "Invalid credentials"})
+	ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid credentials"})
 }
 
 func (handler *UserController) GetAll(ctx *gin.Context) {
