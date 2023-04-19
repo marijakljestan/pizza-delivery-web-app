@@ -36,6 +36,11 @@ func RegisterUser() {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 201 {
+		handleErrorResponse(resp)
+		return
+	}
+
 	var registeredUser dto.User
 	err = json.NewDecoder(resp.Body).Decode(&registeredUser)
 	if err != nil {
@@ -72,14 +77,280 @@ func Login() {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		handleErrorResponse(resp)
+		return
+	}
+
 	var respBody dto.LoginResponse
 	err = json.NewDecoder(resp.Body).Decode(&respBody)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(respBody.Message)
+
 	fmt.Println("Your authorization token:", respBody.Token)
+}
+
+func ListMenu() {
+	url := baseUrl + "/pizza"
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+
+	var menu dto.MenuResponse
+	err = json.NewDecoder(resp.Body).Decode(&menu)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	formatAndPrintResponse(menu)
+}
+
+func CreateOrder() {
+	var items []dto.OrderItem
+	var pizzaName string
+	var quantity int
+	var orderItem dto.OrderItem
+	fmt.Println("-------- Add items to your order ---------")
+Loop:
+	for {
+		fmt.Println("--- Press any key to continue --")
+		fmt.Println("--If you want to finish ordering press 0--")
+		var choice string
+		fmt.Scan(&choice)
+		switch choice {
+		case "0":
+			fmt.Println("Finishing order...")
+			break Loop
+		default:
+			fmt.Println("Pizza name: ")
+			fmt.Scan(&pizzaName)
+
+			fmt.Println("Quantity: ")
+			fmt.Scan(&quantity)
+
+			orderItem = dto.OrderItem{
+				PizzaName: pizzaName,
+				Quantity:  quantity,
+			}
+			items = append(items, orderItem)
+		}
+	}
+
+	reqBody, err := json.Marshal(map[string]any{
+		"items": items,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	url := baseUrl + "/order"
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 201 {
+		handleErrorResponse(resp)
+		return
+	}
+
+	var createOrderResponse dto.CreateOrderResponse
+	err = json.NewDecoder(resp.Body).Decode(&createOrderResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Successfully created order!")
+	formatAndPrintResponse(createOrderResponse)
+}
+
+func CheckOrderStatus() {
+	var orderId string
+	fmt.Println("Enter order id:")
+	fmt.Scan(&orderId)
+
+	url := fmt.Sprintf(baseUrl+"/order/status/%s", orderId)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		handleErrorResponse(resp)
+		return
+	}
+
+	var orderStatusResponse dto.GetOrderStatusResponse
+	err = json.NewDecoder(resp.Body).Decode(&orderStatusResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Your order has status:", orderStatusResponse.OrderStatus)
+}
+
+func CancelOrder() {
+	var orderId string
+	fmt.Println("Enter order id:")
+	fmt.Scan(&orderId)
+
+	url := fmt.Sprintf(baseUrl+"/order/cancel/%s", orderId)
+	req, err := http.NewRequest(http.MethodPut, url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		handleErrorResponse(resp)
+		return
+	}
+
+	var cancelOrderResponse dto.CancelOrderResponse
+	err = json.NewDecoder(resp.Body).Decode(&cancelOrderResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Successfully cancelled order")
+	formatAndPrintResponse(cancelOrderResponse)
+}
+
+func AddPizza() {
+	var name string
+	fmt.Println("Enter name:")
+	fmt.Scan(&name)
+
+	var description string
+	fmt.Println("Enter description:")
+	fmt.Scan(&description)
+
+	var price float32
+	fmt.Println("Enter price:")
+	fmt.Scan(&price)
+
+	bearerToken := getAuthorizationToken()
+	url := baseUrl + "/pizza"
+
+	reqBody, err := json.Marshal(map[string]any{
+		"name":        name,
+		"description": description,
+		"price":       price,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBody))
+	req.Header.Add("Authorization", bearerToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 201 {
+		handleErrorResponse(resp)
+		return
+	}
+
+	var respBody dto.MenuResponse
+	err = json.NewDecoder(resp.Body).Decode(&respBody)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	formatAndPrintResponse(respBody)
+}
+
+func DeletePizza() {
+	var pizzaName string
+	fmt.Println("Enter name of pizza you want to delete:")
+	fmt.Scan(&pizzaName)
+
+	bearerToken := getAuthorizationToken()
+	url := fmt.Sprintf(baseUrl+"/pizza/%s", pizzaName)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	req.Header.Add("Authorization", bearerToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		handleErrorResponse(resp)
+		return
+	}
+
+	var menu dto.MenuResponse
+	err = json.NewDecoder(resp.Body).Decode(&menu)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	formatAndPrintResponse(menu)
+}
+
+func CancelOrderRegardlessStatus() {
+	var orderId string
+	fmt.Println("Enter order id:")
+	fmt.Scan(&orderId)
+
+	bearerToken := getAuthorizationToken()
+	url := fmt.Sprintf(baseUrl+"/order/%s", orderId)
+
+	req, err := http.NewRequest(http.MethodPut, url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("Authorization", bearerToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		handleErrorResponse(resp)
+		return
+	}
+
+	var cancelOrderResponse dto.CancelOrderResponse
+	err = json.NewDecoder(resp.Body).Decode(&cancelOrderResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Successfully cancelled order")
+	formatAndPrintResponse(cancelOrderResponse)
+}
+
+func getAuthorizationToken() string {
+	var token string
+	fmt.Println("Your authorization token:")
+	fmt.Scan(&token)
+	bearerToken := "Bearer " + token
+	return bearerToken
 }
 
 func formatAndPrintResponse(response any) {
@@ -89,6 +360,17 @@ func formatAndPrintResponse(response any) {
 		return
 	}
 	fmt.Println(string(jsonData))
+}
+
+func handleErrorResponse(resp *http.Response) {
+	var responseError dto.ErrorResponse
+	err := json.NewDecoder(resp.Body).Decode(&responseError)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println()
+	fmt.Println(responseError.Error)
+	return
 }
 
 func main() {

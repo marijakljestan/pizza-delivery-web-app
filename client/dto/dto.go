@@ -44,3 +44,7 @@ type GetOrderStatusResponse struct {
 type CancelOrderResponse struct {
 	Order Order `json:"order"`
 }
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
