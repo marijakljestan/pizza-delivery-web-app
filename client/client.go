@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/marijakljestan/golang-web-app/client/dto"
 	"net/http"
+	"strconv"
 )
 
 var baseUrl = "http://localhost:8080"
@@ -238,18 +239,27 @@ func AddPizza() {
 	fmt.Println("Enter description:")
 	fmt.Scan(&description)
 
-	var price float32
+	var price string
 	fmt.Println("Enter price:")
 	fmt.Scan(&price)
+
+	priceConverted, err := strconv.ParseFloat(price, 64)
+	if err != nil {
+		fmt.Println("Error! Expected numeric input!")
+		return
+	}
 
 	bearerToken := getAuthorizationToken()
 	url := baseUrl + "/pizza"
 
-	reqBody, err := json.Marshal(map[string]any{
-		"name":        name,
-		"description": description,
-		"price":       price,
-	})
+	var pizza = dto.Pizza{
+		Name:        name,
+		Description: description,
+		Price:       priceConverted,
+	}
+
+	fmt.Println("Price", price)
+	reqBody, err := json.Marshal(pizza)
 	if err != nil {
 		fmt.Println(err)
 		return

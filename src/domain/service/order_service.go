@@ -23,7 +23,10 @@ func NewOrderService(orderRepository repository.OrderRepository, pizzaService *P
 }
 
 func (service *OrderService) CreateOrder(orderDto dto.OrderDto) (model.Order, error) {
-	createdOrder := service.initializeAndSaveOrder(orderDto)
+	createdOrder, err := service.initializeAndSaveOrder(orderDto)
+	if err != nil {
+		return model.Order{}, err
+	}
 
 	ch := make(chan model.OrderStatus)
 	go func(ch chan<- model.OrderStatus) {
@@ -46,11 +49,15 @@ func (service *OrderService) CreateOrder(orderDto dto.OrderDto) (model.Order, er
 	return createdOrder, nil
 }
 
-func (service *OrderService) initializeAndSaveOrder(orderDto dto.OrderDto) model.Order {
+func (service *OrderService) initializeAndSaveOrder(orderDto dto.OrderDto) (model.Order, error) {
 	order := mapper.MapOrderToDomain(orderDto)
 	var orderPriceTotal float32
 	for _, v := range order.Items {
-		pizza, _ := service.pizzaService.GetPizzaByName(v.PizzaName)
+		pizza, err := service.pizzaService.GetPizzaByName(v.PizzaName)
+		if err != nil {
+			fmt.Println(err)
+			return model.Order{}, err
+		}
 		orderPriceTotal += pizza.Price * float32(v.Quantity)
 	}
 	order.Price = orderPriceTotal
@@ -60,7 +67,7 @@ func (service *OrderService) initializeAndSaveOrder(orderDto dto.OrderDto) model
 	if err != nil {
 		fmt.Println(err)
 	}
-	return createdOrder
+	return createdOrder, nil
 }
 
 func (service *OrderService) CheckOrderStatus(orderId int) (model.OrderStatus, error) {
