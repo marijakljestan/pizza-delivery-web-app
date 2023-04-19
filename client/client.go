@@ -8,6 +8,8 @@ import (
 	"net/http"
 )
 
+var baseUrl string = "http://localhost:8080"
+
 func RegisterUser() {
 	var username string
 	fmt.Println("Enter username:")
@@ -17,7 +19,7 @@ func RegisterUser() {
 	fmt.Println("Enter password:")
 	fmt.Scan(&password)
 
-	url := "http://localhost:8080/user/register"
+	url := baseUrl + "/user/register"
 	reqBody, err := json.Marshal(map[string]string{
 		"username": username,
 		"password": password,
@@ -53,7 +55,7 @@ func Login() {
 	fmt.Println("Enter password:")
 	fmt.Scan(&password)
 
-	url := "http://localhost:8080/user/login"
+	url := baseUrl + "/user/login"
 	reqBody, err := json.Marshal(map[string]string{
 		"username": username,
 		"password": password,
@@ -81,7 +83,7 @@ func Login() {
 }
 
 func ListMenu() {
-	url := "http://localhost:8080/pizza"
+	url := baseUrl + "/pizza"
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
@@ -100,26 +102,59 @@ func ListMenu() {
 }
 
 func CreateOrder() {
-	/**
-	TODO: check how to accept input in slice for order items */
 	var items []dto.OrderItem
-	fmt.Print("Order items:")
-
+	var pizzaName string
+	var quantity int
+	var orderItem dto.OrderItem
+	fmt.Println("-------- Add items to your order ---------")
+	fmt.Println("--- Press any key to continue --")
+Loop:
 	for {
-		var pizzaName string
-		fmt.Println("Pizza name: ")
-		fmt.Scan(&pizzaName)
+		fmt.Println("--If you want to finish ordering press 0--")
+		var choice string
+		fmt.Scan(&choice)
+		switch choice {
+		case "0":
+			fmt.Println("Finishing ordering!")
+			break Loop
+		default:
+			fmt.Println("Pizza name: ")
+			fmt.Scan(&pizzaName)
 
-		var quantity int
-		fmt.Println("Quantity: ")
-		fmt.Scan(quantity)
+			fmt.Println("Quantity: ")
+			fmt.Scan(&quantity)
 
-		orderItem := dto.OrderItem{
-			PizzaName: pizzaName,
-			Quantity:  quantity,
+			orderItem = dto.OrderItem{
+				PizzaName: pizzaName,
+				Quantity:  quantity,
+			}
+			items = append(items, orderItem)
 		}
-		append(items, orderItem)
 	}
+
+	reqBody, err := json.Marshal(map[string]any{
+		"items": items,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	url := baseUrl + "/order"
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+
+	var createOrderResponse dto.CreateOrderResponse
+	err = json.NewDecoder(resp.Body).Decode(&createOrderResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Successfully created order!")
+	formatAndPrintResponse(createOrderResponse)
 }
 
 func CheckOrderStatus() {
@@ -127,7 +162,7 @@ func CheckOrderStatus() {
 	fmt.Println("Enter order id:")
 	fmt.Scan(&orderId)
 
-	url := fmt.Sprintf("http://localhost:8080/order/status/%s", orderId)
+	url := fmt.Sprintf(baseUrl+"/order/status/%s", orderId)
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
@@ -149,7 +184,7 @@ func CancelOrder() {
 	fmt.Println("Enter order id:")
 	fmt.Scan(&orderId)
 
-	url := fmt.Sprintf("http://localhost:8080/order/cancel/%s", orderId)
+	url := fmt.Sprintf(baseUrl+"/order/cancel/%s", orderId)
 	req, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -187,7 +222,7 @@ func AddPizza() {
 	fmt.Scan(&token)
 	bearerToken := "Bearer " + token
 
-	url := "http://localhost:8080/pizza"
+	url := baseUrl + "/pizza"
 
 	reqBody, err := json.Marshal(map[string]any{
 		"name":        name,
@@ -226,7 +261,7 @@ func DeletePizza() {
 	fmt.Scan(&token)
 
 	bearerToken := "Bearer " + token
-	url := fmt.Sprintf("http://localhost:8080/pizza/%s", pizzaName)
+	url := fmt.Sprintf(baseUrl+"/pizza/%s", pizzaName)
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	req.Header.Add("Authorization", bearerToken)
@@ -260,7 +295,7 @@ func CancelOrderRegardlessStatus() {
 
 	bearerToken := "Bearer " + token
 
-	url := fmt.Sprintf("http://localhost:8080/order/%s", orderId)
+	url := fmt.Sprintf(baseUrl+"/order/%s", orderId)
 	req, err := http.NewRequest(http.MethodPut, url, nil)
 	if err != nil {
 		fmt.Println(err)

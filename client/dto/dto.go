@@ -33,6 +33,10 @@ type MenuResponse struct {
 	Menu []Pizza `json:"menu"`
 }
 
+type CreateOrderResponse struct {
+	Order Order `json:"order"`
+}
+
 type GetOrderStatusResponse struct {
 	OrderStatus string `json:"status"`
 }

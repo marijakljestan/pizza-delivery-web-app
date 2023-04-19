@@ -31,7 +31,7 @@ func (handler *OrderController) CreateOrder(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"data": order})
+	ctx.JSON(http.StatusOK, gin.H{"order": order})
 }
 
 func (handler *OrderController) CheckOrderStatus(ctx *gin.Context) {
