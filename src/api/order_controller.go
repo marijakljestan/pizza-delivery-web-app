@@ -60,7 +60,7 @@ func (handler *OrderController) CancelOrder(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Order can't  be cancelled"})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": order})
+	ctx.JSON(http.StatusOK, gin.H{"order": order})
 }
 
 func (handler *OrderController) CancelOrderRegardlessStatus(ctx *gin.Context) {
@@ -75,5 +75,5 @@ func (handler *OrderController) CancelOrderRegardlessStatus(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": order})
+	ctx.JSON(http.StatusOK, gin.H{"order": order})
 }

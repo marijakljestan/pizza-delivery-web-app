@@ -7,7 +7,9 @@ type Pizza struct {
 }
 
 type Order struct {
+	Id               int         `json:"id"`
 	CustomerUsername string      `json:"customer_username"`
+	Status           int         `json:"status"`
 	Price            float32     `json:"price"`
 	Items            []OrderItem `json:"items"`
 }
@@ -27,10 +29,14 @@ type LoginResponse struct {
 	Token   string `json:"token"`
 }
 
-type GetMenuResponse struct {
+type MenuResponse struct {
 	Menu []Pizza `json:"menu"`
 }
 
 type GetOrderStatusResponse struct {
 	OrderStatus string `json:"status"`
+}
+
+type CancelOrderResponse struct {
+	Order Order `json:"order"`
 }

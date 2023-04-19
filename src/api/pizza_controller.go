@@ -40,7 +40,7 @@ func (handler *PizzaController) AddPizzaToMenu(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Error while adding pizza on menu"})
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{"data": menu})
+	ctx.JSON(http.StatusCreated, gin.H{"menu": menu})
 }
 
 func (handler *PizzaController) DeletePizzaFromMenu(ctx *gin.Context) {
@@ -50,5 +50,5 @@ func (handler *PizzaController) DeletePizzaFromMenu(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Pizza not found!"})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": menu})
+	ctx.JSON(http.StatusOK, gin.H{"menu": menu})
 }

@@ -89,7 +89,7 @@ func ListMenu() {
 	}
 	defer resp.Body.Close()
 
-	var menu dto.GetMenuResponse
+	var menu dto.MenuResponse
 	err = json.NewDecoder(resp.Body).Decode(&menu)
 	if err != nil {
 		fmt.Println(err)
@@ -100,7 +100,26 @@ func ListMenu() {
 }
 
 func CreateOrder() {
-	
+	/**
+	TODO: check how to accept input in slice for order items */
+	var items []dto.OrderItem
+	fmt.Print("Order items:")
+
+	for {
+		var pizzaName string
+		fmt.Println("Pizza name: ")
+		fmt.Scan(&pizzaName)
+
+		var quantity int
+		fmt.Println("Quantity: ")
+		fmt.Scan(quantity)
+
+		orderItem := dto.OrderItem{
+			PizzaName: pizzaName,
+			Quantity:  quantity,
+		}
+		append(items, orderItem)
+	}
 }
 
 func CheckOrderStatus() {
@@ -123,6 +142,144 @@ func CheckOrderStatus() {
 		return
 	}
 	fmt.Println("Your order has status:", orderStatusResponse.OrderStatus)
+}
+
+func CancelOrder() {
+	var orderId string
+	fmt.Println("Enter order id:")
+	fmt.Scan(&orderId)
+
+	url := fmt.Sprintf("http://localhost:8080/order/cancel/%s", orderId)
+	req, err := http.NewRequest(http.MethodPut, url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	var cancelOrderResponse dto.CancelOrderResponse
+	err = json.NewDecoder(resp.Body).Decode(&cancelOrderResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Successfully cancelled order")
+	formatAndPrintResponse(cancelOrderResponse)
+}
+
+func AddPizza() {
+	var name string
+	fmt.Println("Enter name:")
+	fmt.Scan(&name)
+
+	var description string
+	fmt.Println("Enter description:")
+	fmt.Scan(&description)
+
+	var price float32
+	fmt.Println("Enter price:")
+	fmt.Scan(&price)
+
+	var token string
+	fmt.Println("Your authorization token:")
+	fmt.Scan(&token)
+	bearerToken := "Bearer " + token
+
+	url := "http://localhost:8080/pizza"
+
+	reqBody, err := json.Marshal(map[string]any{
+		"name":        name,
+		"description": description,
+		"price":       price,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(reqBody))
+	req.Header.Add("Authorization", bearerToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	var respBody dto.MenuResponse
+	err = json.NewDecoder(resp.Body).Decode(&respBody)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	formatAndPrintResponse(respBody)
+}
+
+func DeletePizza() {
+	var pizzaName string
+	fmt.Println("Enter name of pizza you want to delete:")
+	fmt.Scan(&pizzaName)
+
+	var token string
+	fmt.Println("Your authorization token:")
+	fmt.Scan(&token)
+
+	bearerToken := "Bearer " + token
+	url := fmt.Sprintf("http://localhost:8080/pizza/%s", pizzaName)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	req.Header.Add("Authorization", bearerToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
+
+	var menu dto.MenuResponse
+	err = json.NewDecoder(resp.Body).Decode(&menu)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	formatAndPrintResponse(menu)
+}
+
+func CancelOrderRegardlessStatus() {
+	var orderId string
+	fmt.Println("Enter order id:")
+	fmt.Scan(&orderId)
+
+	var token string
+	fmt.Println("Your authorization token:")
+	fmt.Scan(&token)
+
+	bearerToken := "Bearer " + token
+
+	url := fmt.Sprintf("http://localhost:8080/order/%s", orderId)
+	req, err := http.NewRequest(http.MethodPut, url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Add("Authorization", bearerToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	var cancelOrderResponse dto.CancelOrderResponse
+	err = json.NewDecoder(resp.Body).Decode(&cancelOrderResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Successfully cancelled order")
+	formatAndPrintResponse(cancelOrderResponse)
 }
 
 func formatAndPrintResponse(response any) {
@@ -164,6 +321,7 @@ func handlePrompets() int {
 		handleCustomerChoice()
 	case "3":
 		Login()
+		handleAdminChoice()
 	case "0":
 		return 0
 	}
@@ -173,7 +331,7 @@ func handlePrompets() int {
 func handleCustomerChoice() {
 	for {
 		fmt.Println("-----------------------------------------")
-		fmt.Println("--------- Choose Operation ----------")
+		fmt.Println("----------- Choose Operation ------------")
 		fmt.Println("-----------------------------------------")
 		fmt.Println("1) List the menu")
 		fmt.Println("2) Create an order")
@@ -182,7 +340,6 @@ func handleCustomerChoice() {
 		fmt.Println("0) BACK")
 		var choice string
 		fmt.Scan(&choice)
-		//utils.ClearTerminal()
 		fmt.Println("-----------------------------------------")
 		switch choice {
 		case "1":
@@ -191,18 +348,38 @@ func handleCustomerChoice() {
 			CreateOrder()
 		case "3":
 			CheckOrderStatus()
-		/*case "4":
-		fmt.Print("Enter book ID: ")
-		var id string
-		fmt.Scan(&id)
-		testPort()
-		flag, book := getBook(HOST + ":" + PORT + "/books/search?id=" + id)
-		if flag != 1 {
-			fmt.Println("There is No book with this ID")
-		} else {
-			fmt.Println("Book is:\n" + book.ToString() + "\n")
+		case "4":
+			CancelOrder()
+		case "0":
+			return
+		default:
+			fmt.Println("INPUT ERROR !")
 		}
-		*/
+	}
+}
+
+func handleAdminChoice() {
+	for {
+		fmt.Println("-----------------------------------------")
+		fmt.Println("----------- Choose Operation ------------")
+		fmt.Println("-----------------------------------------")
+		fmt.Println("1) List the menu")
+		fmt.Println("2) Add pizza")
+		fmt.Println("3) Delete pizza")
+		fmt.Println("4) Cancel order")
+		fmt.Println("0) BACK")
+		var choice string
+		fmt.Scan(&choice)
+		fmt.Println("-----------------------------------------")
+		switch choice {
+		case "1":
+			ListMenu()
+		case "2":
+			AddPizza()
+		case "3":
+			DeletePizza()
+		case "4":
+			CancelOrderRegardlessStatus()
 		case "0":
 			return
 		default:
