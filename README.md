@@ -2,17 +2,17 @@
 
 ## Features
 
-#### Methods for customers  \
+#### Methods for customers
 List the menu \
 Create order  \
 Check order status  \
-Cancel order if it’s status is not ready_to_be_delivered  \
+Cancel order if it’s status is not ready_to_be_delivered
 
 #### Methods for admins 
 This methods are allowed only for users with role ADMIN (which is achieved using JWT) \
 Add pizza to the menu \
 Delete pizza from the menu \
-Cancel order regardless the status \
+Cancel order regardless the status
 
 ## Running application localy
 
